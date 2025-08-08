@@ -2,6 +2,8 @@ package com.example.Convertly.service;
 
 
 import com.example.Convertly.enums.LengthUnit;
+import com.example.Convertly.enums.TemperatureUnit;
+import com.example.Convertly.exception.InvalidUnitException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -9,14 +11,35 @@ public class LengthService implements UnitConversionService {
 
     @Override
     public double convert(String fromUnit, String toUnit, double value) {
-        LengthUnit from = LengthUnit.valueOf(fromUnit.trim().toUpperCase());
-        LengthUnit to = LengthUnit.valueOf(toUnit.trim().toUpperCase());
+        LengthUnit from ;
+        LengthUnit to ;
+
+
+        try {
+            from = LengthUnit.valueOf(fromUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported temperature unit: " + fromUnit);
+        }
+
+        try {
+            to = LengthUnit.valueOf(toUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported temperature unit: " + toUnit);
+        }
+
 
         if (from == to) {
             return value;
         }
 
 
+        double result = getResult(value, from, to);
+
+
+        return Math.round(result * 100d) / 100d;
+    }
+
+    private static double getResult(double value, LengthUnit from, LengthUnit to) {
         double valueInMeters = switch (from) {
             case METER -> value;
             case KILOMETER -> value * 1000;
@@ -33,9 +56,7 @@ public class LengthService implements UnitConversionService {
             case FOOT -> valueInMeters / 0.3048;
             case INCH -> valueInMeters / 0.0254;
         };
-
-
-        return Math.round(result * 100d) / 100d;
+        return result;
     }
 
     @Override

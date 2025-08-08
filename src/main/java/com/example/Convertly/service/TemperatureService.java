@@ -1,6 +1,8 @@
 package com.example.Convertly.service;
 
+import com.example.Convertly.enums.LengthUnit;
 import com.example.Convertly.enums.TemperatureUnit;
+import com.example.Convertly.exception.InvalidUnitException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -8,37 +10,45 @@ public class TemperatureService implements UnitConversionService {
 
     @Override
     public double convert(String fromUnit, String toUnit, double value) {
-        TemperatureUnit from = TemperatureUnit.valueOf(fromUnit.toUpperCase());
-        TemperatureUnit to = TemperatureUnit.valueOf(toUnit.toUpperCase());
+        TemperatureUnit from;
+        TemperatureUnit to;
 
-        if (from == to){
+        try {
+            from = TemperatureUnit.valueOf(fromUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported temperature unit: " + fromUnit);
+        }
+
+        try {
+            to = TemperatureUnit.valueOf(toUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported temperature unit: " + toUnit);
+        }
+
+        if (from == to) {
             return value;
         }
 
-        double valueInCelsius;
-        switch (from) {
-            case CELSIUS:
-                valueInCelsius = value;
-                break;
-            case FAHRENHEIT:
-                valueInCelsius = (value - 32) * 5 / 9;
-                break;
-            case KELVIN:
-                valueInCelsius = value - 273.15;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported temperature unit: " + fromUnit);
-        }
-
-        double result =switch (to) {
-            case CELSIUS-> valueInCelsius;
-            case FAHRENHEIT-> (valueInCelsius * 9 / 5) + 32;
-            case KELVIN-> valueInCelsius + 273.15;
-
-        };
+        double result = getResult(value,from,to);
 
         return Math.round(result * 100d) / 100d;
 
+    }
+
+    private static double getResult(double value, TemperatureUnit from, TemperatureUnit to){
+        double valueInCelsius = switch (from) {
+            case CELSIUS -> value;
+            case FAHRENHEIT -> (value - 32) * 5 / 9;
+            case KELVIN -> value - 273.15;
+        };
+
+        double result = switch (to) {
+            case CELSIUS -> valueInCelsius;
+            case FAHRENHEIT -> (valueInCelsius * 9 / 5) + 32;
+            case KELVIN -> valueInCelsius + 273.15;
+        };
+
+        return result;
     }
 
     @Override

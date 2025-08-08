@@ -1,6 +1,9 @@
 package com.example.Convertly.service;
 
+import com.example.Convertly.enums.LengthUnit;
+import com.example.Convertly.enums.TemperatureUnit;
 import com.example.Convertly.enums.WeightUnit;
+import com.example.Convertly.exception.InvalidUnitException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -8,14 +11,33 @@ public class WeightService implements UnitConversionService {
 
     @Override
     public double convert(String fromUnit, String toUnit, double value) {
-        WeightUnit from = WeightUnit.valueOf(fromUnit.trim().toUpperCase());
-        WeightUnit to = WeightUnit.valueOf(toUnit.trim().toUpperCase());
+        WeightUnit from ;
+        WeightUnit to ;
+
+        try {
+            from = WeightUnit.valueOf(fromUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported weight unit: " + fromUnit);
+        }
+
+        try {
+            to = WeightUnit.valueOf(toUnit.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidUnitException("Unsupported weight unit: " + toUnit);
+        }
 
         if (from == to) {
             return value;
         }
 
 
+        double result = getResult(value,from,to);
+
+
+        return Math.round(result * 100d) / 100d;
+    }
+
+    private static double getResult(double value, WeightUnit from, WeightUnit to){
         double valueInGrams = switch (from) {
             case GRAM -> value;
             case KILOGRAM -> value * 1000;
@@ -31,8 +53,7 @@ public class WeightService implements UnitConversionService {
             case OUNCE -> valueInGrams / 28.3495231;
         };
 
-
-        return Math.round(result * 100d) / 100d;
+        return result;
     }
 
     @Override
